@@ -26,7 +26,7 @@ class NumberInput(Widget):
         on_submit: Optional[Callable[[int], Any]] = None,
     ):
         is_underline  = style == NumberInput.Style.UNDERLINE
-        control_w     = max_digits + 4                          # "− NNNN +"
+        control_w     = max_digits + 4          # "− NNNN +"
         label_w       = len(label) if label else 0
         gap           = 1 if label_w else 0
         bbox_w        = width if width is not None else (label_w + gap + control_w)
@@ -66,23 +66,22 @@ class NumberInput(Widget):
 
     def handle_key(self, key):
         if key.is_sequence:
-            if key.name == 'KEY_UP':   return Widget.CYCLE_OUT_BWD
-            if key.name == 'KEY_DOWN': return Widget.CYCLE_OUT_FWD
             if key.name == 'KEY_LEFT':  self._adjust(-1); return Widget.NO_EVENT
             if key.name == 'KEY_RIGHT': self._adjust(+1); return Widget.NO_EVENT
             if key.name == 'KEY_BACKSPACE':
                 if self.is_dirty:
                     s = str(self.value)[:-1]
-                    self.value = int(s) if s else 0
+                    self.value = self._clamp(int(s) if s else 0, self.min_value, self.max_value)
                 else:
-                    self.value = 0
+                    self.value = self._clamp(0, self.min_value, self.max_value)
                     self.is_dirty = True
                 return Widget.NO_EVENT
             if key.name == 'KEY_ENTER':
                 if self.on_submit: return self.on_submit(self.value)
                 return self.value
             if key.name == 'KEY_ESCAPE' and not self.required: return Widget.CANCELLED
-        elif key.isdigit():
+            return Widget.BUBBLE
+        if key.isdigit():
             if self.is_dirty:
                 new_str = str(self.value) + str(key)
                 if len(new_str) <= self.max_digits:
@@ -91,7 +90,7 @@ class NumberInput(Widget):
                 self.value = self._clamp(int(str(key)), self.min_value, self.max_value)
                 self.is_dirty = True
             return Widget.NO_EVENT
-        return Widget.NO_EVENT
+        return Widget.BUBBLE
 
     def _adjust(self, delta: int):
         self.value = self._clamp(self.value + delta, self.min_value, self.max_value)

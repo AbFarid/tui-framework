@@ -35,9 +35,11 @@ class TitleScene(Scene):
 
         from .game_scene import GameScene
         from .name_scene import NameScene
+        from .name_scene_master import NameSceneMaster
+        
         options = [
-            Option('New Game', action=lambda: NameScene(screen)), # requirement: lambda
-            Option('Continue', disabled=True),
+            Option('New Game', action=lambda: NameSceneMaster(screen)), # requirement: lambda
+            Option('Continue', action=lambda: NameScene(screen)), #disabled=True
             Option('Quit',     action=lambda: None),
         ]
         menu = Menu(

@@ -43,9 +43,11 @@ class Button(Widget):
         screen.put(self.x, self.y, text)
 
     def handle_key(self, key):
-        if self.disabled: return Widget.NO_EVENT
+        if self.disabled: return Widget.BUBBLE
         if key.is_sequence:
             if key.name == 'KEY_ENTER' and self.action: return self.action()
-        elif self.key and key.lower() == self.key:
+            return Widget.BUBBLE
+        if self.key and key.lower() == self.key:
             if self.action: return self.action()
-        return Widget.NO_EVENT
+            return Widget.NO_EVENT
+        return Widget.BUBBLE

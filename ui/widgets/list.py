@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional, Self, Union
 from .widget import Widget
+from ._scrollbar import draw_scrollbar
 from errors import InvalidWidgetSizeError
 
 if TYPE_CHECKING:
@@ -15,6 +16,11 @@ class ListItem:
     id: Optional[str] = None
     color: Optional[str] = None # blessed attr for non-selected rendering
     disabled: bool = False
+    key: Optional[str] = None   # optional shortcut letter (used by RadioGroup)
+
+    def __post_init__(self):
+        if self.value is None: self.value = self.label
+        if self.key: self.key = self.key.lower()
 
 
 class List(Widget):
@@ -32,7 +38,7 @@ class List(Widget):
     ):
         if show_scrollbar:
             if h < 4: raise InvalidWidgetSizeError(w, h, 'scrollbar needs h ≥ 4 (2 tips + 2 thumb positions)')
-            if w < 2: raise InvalidWidgetSizeError(w, h, 'scrollbar reserves the rightmost column, so w ≥ 2')
+            if w < 3: raise InvalidWidgetSizeError(w, h, 'scrollbar reserves 2 rightmost columns (gap + bar), so w ≥ 3')
         elif w < 1 or h < 1:
             raise InvalidWidgetSizeError(w, h, 'must be at least 1×1')
 
@@ -81,6 +87,15 @@ class List(Widget):
         self.scroll   = 0
         return self
 
+    def focus(self, snap: Optional[str] = None) -> 'List':
+        if snap and self.items:
+            self.selected = 0 if snap == 'first' else len(self.items) - 1
+            if self.items[self.selected].disabled:
+                self._move(+1 if snap == 'first' else -1)
+            else:
+                self._scroll_to_selected()
+        return super().focus()
+
     def _move(self, delta: int):
         n = len(self.items)
         if not n: return
@@ -104,7 +119,7 @@ class List(Widget):
             self.scroll = self.selected - self.h + 1
 
     def draw(self, screen: Screen):
-        content_w = self.w - 1 if self.show_scrollbar else self.w
+        content_w = self.w - 2 if self.show_scrollbar else self.w
         term = screen.term
 
         for row in range(self.h):
@@ -125,36 +140,23 @@ class List(Widget):
                     if style: text = style(text)
             screen.put(self.x, self.y + row, text)
 
-        if self.show_scrollbar: self._draw_scrollbar(screen)
-
-    def _draw_scrollbar(self, screen: Screen):
-        bar_x = self.x + self.w - 1
-        n = len(self.items)
-
-        # scrollbar track
-        screen.put(bar_x, self.y,              '╿')
-        screen.put(bar_x, self.y + self.h - 1, '╽')
-        for i in range(1, self.h - 1):
-            screen.put(bar_x, self.y + i, '│')
-
-        # scrollbar thumb
-        if n <= self.h: return
-        thumb_size = max(1, self.h * self.h // n)
-        thumb_max  = self.h - thumb_size
-        thumb_pos  = (self.scroll * thumb_max) // (n - self.h)
-        for i in range(thumb_pos, thumb_pos + thumb_size):
-            screen.put(bar_x, self.y + i, '┃')
+        if self.show_scrollbar:
+            draw_scrollbar(screen, self.x + self.w - 1, self.y, self.h, len(self.items), self.scroll, dim=not self.is_focused)
 
     def handle_key(self, key):
-        if not self.selectable: return Widget.NO_EVENT
+        if not self.selectable: return Widget.BUBBLE
 
         if key.is_sequence:
-            if key.name == 'KEY_UP':   self._move(-1)
-            if key.name == 'KEY_DOWN': self._move(+1)
-
+            if key.name == 'KEY_UP':   return self._move_or_release(-1)
+            if key.name == 'KEY_DOWN': return self._move_or_release(+1)
             if key.name == 'KEY_ENTER' and self.items and not self.items[self.selected].disabled:
                 return self.items[self.selected]
-
             if key.name == 'KEY_ESCAPE' and not self.required: return Widget.CANCELLED
 
+        return Widget.BUBBLE
+
+    def _move_or_release(self, delta: int):
+        before = self.selected
+        self._move(delta)
+        if self.selected == before and not self.wrap: return Widget.BUBBLE
         return Widget.NO_EVENT

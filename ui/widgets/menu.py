@@ -125,25 +125,26 @@ class Menu(Widget):
     def handle_key(self, key):
         if key.is_sequence:
             if self.orientation == Menu.Orientation.VERTICAL:
-                if key.name == 'KEY_UP':   self._move(-1)
-                if key.name == 'KEY_DOWN': self._move(+1)
+                if key.name == 'KEY_UP':   self._move(-1); return Menu.NO_EVENT
+                if key.name == 'KEY_DOWN': self._move(+1); return Menu.NO_EVENT
             else:
-                if key.name == 'KEY_LEFT':  self._move(-1)
-                if key.name == 'KEY_RIGHT': self._move(+1)
-            
+                if key.name == 'KEY_LEFT':  self._move(-1); return Menu.NO_EVENT
+                if key.name == 'KEY_RIGHT': self._move(+1); return Menu.NO_EVENT
+
             if key.name == 'KEY_ENTER' and not self.options[self.selected].disabled:
                 return self.options[self.selected].action()
-            
+
             if key.name == 'KEY_ESCAPE' and not self.required: return Menu.CANCELLED
-        
-        else:
-            for opt in self.options: # explicit-key shortcut
-                if opt.key and not opt.disabled and key.lower() == opt.key:
-                    return opt.action()
-            
-            if self.number_style is not None and key.isdigit(): # number shortcut
-                n = int(key) - 1
-                if 0 <= n < len(self.options) and not self.options[n].disabled and not self.options[n].key:
-                    return self.options[n].action()
-        
-        return Menu.NO_EVENT
+
+            return Menu.BUBBLE
+
+        for opt in self.options: # explicit-key shortcut
+            if opt.key and not opt.disabled and key.lower() == opt.key:
+                return opt.action()
+
+        if self.number_style is not None and key.isdigit(): # number shortcut
+            n = int(key) - 1
+            if 0 <= n < len(self.options) and not self.options[n].disabled and not self.options[n].key:
+                return self.options[n].action()
+
+        return Menu.BUBBLE

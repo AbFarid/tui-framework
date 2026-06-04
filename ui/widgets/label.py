@@ -7,7 +7,9 @@ if TYPE_CHECKING:
 
 
 class Label(Widget):
-    focusable = False
+    @property
+    def focusable(self) -> bool:
+        return False
 
     def __init__(
         self,
@@ -30,4 +32,4 @@ class Label(Widget):
                 if style: text = style(text)
             screen.put(self.x, self.y + i, text)
 
-    def handle_key(self, _key): return Widget.NO_EVENT
+    def handle_key(self, _key): return Widget.BUBBLE

@@ -85,20 +85,23 @@ class TextInput(Widget):
 
     def handle_key(self, key):
         if key.is_sequence:
-            if key.name == 'KEY_ENTER' and (self.value or not self.required):
-                if self.on_submit: return self.on_submit(self.value)
-                return self.value
-
-            if key.name == 'KEY_ESCAPE' and not self.required: return TextInput.CANCELLED
-
+            if key.name == 'KEY_ENTER':
+                if self.value or not self.required:
+                    if self.on_submit: return self.on_submit(self.value)
+                    return self.value
+                return TextInput.NO_EVENT
+            if key.name == 'KEY_ESCAPE':
+                if not self.required: return TextInput.CANCELLED
+                return TextInput.NO_EVENT
             if key.name == 'KEY_BACKSPACE':
                 if not self.is_dirty and self.value: self.value = ''
                 else: self.value = self.value[:-1]
                 self.is_dirty = True
-
-        elif key.isprintable():
+                return TextInput.NO_EVENT
+            return TextInput.BUBBLE
+        if key.isprintable():
             if self.max_length is None or len(self.value) < self.max_length:
                 self.value += str(key)
                 self.is_dirty = True
-
-        return TextInput.NO_EVENT
+            return TextInput.NO_EVENT
+        return TextInput.BUBBLE

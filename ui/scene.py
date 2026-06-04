@@ -35,7 +35,7 @@ class Scene:
         panel.focus()
         if snap is not None:
             focusable = [n for n, w in panel.widgets.items() if w.focusable]
-            if focusable: panel.focus(focusable[-1 if snap == 'last' else 0])
+            if focusable: panel.focus_child(focusable[-1 if snap == 'last' else 0])
         return self
 
     def center(self, panel: Panel) -> Panel:
@@ -53,6 +53,18 @@ class Scene:
         panel.move_to(panel.x, (self.screen.height - panel.h) // 2)
         return panel
 
+    def center_all(self, x: bool = True, y: bool = True) -> 'Scene':
+        if not self.panels: return self
+        min_x = min(p.x for p in self.panels.values())
+        min_y = min(p.y for p in self.panels.values())
+        max_x = max(p.x + p.w for p in self.panels.values())
+        max_y = max(p.y + p.h for p in self.panels.values())
+        dx = (self.screen.width  - (max_x - min_x)) // 2 - min_x if x else 0
+        dy = (self.screen.height - (max_y - min_y)) // 2 - min_y if y else 0
+        for p in self.panels.values():
+            p.move_to(p.x + dx, p.y + dy)
+        return self
+
     def route_key(self, key):
         if not self._focused: return Widget.NO_EVENT
         result = self.panels[self._focused].handle_key(key)
@@ -64,6 +76,7 @@ class Scene:
             self.panels[self._focused]._cycle_focus(reverse=reverse, wrap=True)
             return Widget.NO_EVENT
 
+        if result is Widget.BUBBLE: return Widget.NO_EVENT
         return result
 
     def _cycle_panel(self, reverse: bool = False, wrap: bool = False) -> bool:
