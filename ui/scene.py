@@ -1,11 +1,15 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Literal, Optional
+import json
+import os
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
 from .widgets.widget import Widget
 from errors import PanelNotFoundError
 
 if TYPE_CHECKING:
     from .screen import Screen
     from .panel import Panel
+
+STATE_DIR = 'state'
 
 
 class Scene:
@@ -14,6 +18,7 @@ class Scene:
         self.screen = screen
         self.panels: dict[str, Panel] = {}
         self._focused: Optional[str] = None
+        self.commands: list[tuple[str, str, Any]] = []  # (key, label, action)
 
     def add(self, name: str, panel: Panel) -> Panel:
         self.panels[name] = panel
@@ -24,6 +29,39 @@ class Scene:
 
     def _handle_focus_bubble(self, panel_name: str):
         self.focus(panel_name)
+
+    def tree(self):
+        """Print the whole scene's panel/widget tree (debugging)."""
+        for panel in self.panels.values():
+            panel.tree()
+
+    def _stateful(self):
+        """Every widget in the tree that has state to persist, keyed by alias."""
+        for panel in self.panels.values():
+            for _, w in panel.walk():
+                if w.alias and w.serialize() is not None:
+                    yield w
+
+    def _state_path(self, name: Optional[str] = None) -> str:
+        name = name or type(self).__name__
+        return os.path.join(STATE_DIR, f'{name}.json')
+
+    def save(self, name: Optional[str] = None):
+        path = self._state_path(name)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        data = {w.alias: w.serialize() for w in self._stateful()}  # requirement: serialization
+        with open(path, 'w') as f: json.dump(data, f, indent=2)
+
+    def load(self, name: Optional[str] = None, clear: bool = False):
+        path = self._state_path(name)
+        try:
+            with open(path) as f:
+                data = json.load(f)
+        except FileNotFoundError: return
+        for w in self._stateful():
+            if w.alias in data:
+                w.deserialize(data[w.alias])
+        if clear: os.remove(path)
 
     def focus(self, name: str, snap: Optional[Literal['first', 'last']] = None) -> 'Scene':
         if name not in self.panels: raise PanelNotFoundError(name, list(self.panels))
@@ -65,8 +103,26 @@ class Scene:
             p.move_to(p.x + dx, p.y + dy)
         return self
 
+    # ── scene-wide commands (key → labelled action) ────────────────────────
+    def add_command(self, key: str, label: str, action: Callable[[], Any]) -> 'Scene':
+        self.commands.append((key, label, action))
+        return self
+
+    def get_command_hints(self, gap: int = 3) -> str:
+        return (' ' * gap).join(f'[{k.upper()}] {label}' for k, label, _ in self.commands)
+
+    def _run_command(self, key):
+        if key.is_sequence: return None
+        for k, _, action in self.commands:
+            if key.lower() == k.lower():
+                r = action()
+                return r if r is not None else Widget.NO_EVENT
+        return None
+
     def route_key(self, key):
-        if not self._focused: return Widget.NO_EVENT
+        if not self._focused:
+            hit = self._run_command(key)
+            return hit if hit is not None else Widget.NO_EVENT
         result = self.panels[self._focused].handle_key(key)
 
         if result is Widget.CYCLE_OUT_FWD or result is Widget.CYCLE_OUT_BWD:
@@ -76,7 +132,10 @@ class Scene:
             self.panels[self._focused]._cycle_focus(reverse=reverse, wrap=True)
             return Widget.NO_EVENT
 
-        if result is Widget.BUBBLE: return Widget.NO_EVENT
+        if result is Widget.BUBBLE:
+            hit = self._run_command(key)
+            if hit is not None: return hit
+            return Widget.NO_EVENT
         return result
 
     def _cycle_panel(self, reverse: bool = False, wrap: bool = False) -> bool:

@@ -51,6 +51,9 @@ class NumberInput(Widget):
         if hi is not None and v > hi: return hi
         return v
 
+    def serialize(self): return self.value
+    def deserialize(self, data): self.value = self._clamp(int(data), self.min_value, self.max_value)
+
     def draw(self, screen: Screen):
         term = screen.term
         if self.label: screen.put(self.x, self.y, self.label)

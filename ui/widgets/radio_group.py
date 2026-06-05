@@ -65,6 +65,14 @@ class RadioGroup(Widget):
     def item(self) -> Optional[ListItem]:
         return self.items[self.selected] if self.items else None
 
+    def serialize(self): return self.value
+    def deserialize(self, data):
+        for i, it in enumerate(self.items):
+            if it.value == data:
+                self.selected = i
+                if self.on_change: self.on_change(it) # replay side effects
+                return
+
     def _label(self, i: int) -> str:
         glyph = self.glyph_on if i == self.selected else self.glyph_off
         return glyph + self.items[i].label

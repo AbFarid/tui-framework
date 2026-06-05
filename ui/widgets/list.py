@@ -87,6 +87,12 @@ class List(Widget):
         self.scroll   = 0
         return self
 
+    def serialize(self): return self.selected if self.selectable else None
+    def deserialize(self, data):
+        if 0 <= data < len(self.items):
+            self.selected = data
+            self._scroll_to_selected()
+
     def focus(self, snap: Optional[str] = None) -> 'List':
         if snap and self.items:
             self.selected = 0 if snap == 'first' else len(self.items) - 1

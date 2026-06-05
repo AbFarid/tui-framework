@@ -74,6 +74,10 @@ class Widget(ABC):
     def place_below(self, target: Widget, gap: int = GAP) -> Self:
         return self.move_to(target.x, target.y + target.h + gap)
 
+
+    def serialize(self) -> Any: return None
+    def deserialize(self, data: Any) -> None: pass
+
     @abstractmethod
     def draw(self, screen: Screen) -> None: ...
 

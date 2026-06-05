@@ -75,7 +75,6 @@ class NameScene(Scene):
         main.add('list', ls.place_right_of(ti, 5))
         main.add('radio', rg.place_below(l1, 3))
         main.add('radio-desc', rg_desc.place_right_of(rg, 10))
-        main.focus_child('name')
 
         main.fit_to_content()
         main.align(ls, Panel.Anchor.RIGHT)

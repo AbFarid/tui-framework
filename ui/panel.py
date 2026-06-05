@@ -3,6 +3,7 @@ from enum import Enum, Flag, auto
 from typing import TYPE_CHECKING, Callable, Optional, Self
 from .widgets.widget import Widget
 from errors import WidgetNotFoundError, InvalidWidgetSizeError
+from debug import traced
 
 if TYPE_CHECKING:
     from .screen import Screen
@@ -117,7 +118,20 @@ class Panel(Widget):
 
     @property
     def focusable(self) -> bool:
-        return any(w.focusable for w in self.widgets.values())
+        return any(w.focusable for w in self.widgets.values()) # requirement: generator expression
+
+    def walk(self, depth: int = 0): # requirement: generator function
+        """Depth-first iterator over descendants, yielding (depth, widget)."""
+        for w in self.widgets.values():
+            yield depth, w
+            if isinstance(w, Panel):
+                yield from w.walk(depth + 1)
+
+    def tree(self):
+        """Print an indented tree of this panel and its descendants (debugging)."""
+        print(f'{self.alias}: {type(self).__name__} {self.w}x{self.h}')
+        for depth, w in self.walk():
+            print('  ' * (depth + 1) + f'{w.alias}: {type(w).__name__} {w.w}x{w.h}')
 
     def add(self, name: str, widget: Widget, anchor: Optional[Anchor] = None) -> Widget:
         if anchor: self.align(widget, anchor)
@@ -139,6 +153,7 @@ class Panel(Widget):
             if names: self.focus_child(names[-1 if snap == 'last' else 0], snap=snap)
         return self
 
+    @traced
     def focus_child(self, name: str, snap: Optional[str] = None) -> Self:
         if name not in self.widgets: raise WidgetNotFoundError(name, list(self.widgets))
         if self._focused == name and self.widgets[name].is_focused and snap is None: return self
@@ -235,7 +250,7 @@ class Panel(Widget):
         return self
 
     def handle_key(self, key):
-        # Panel-scoped shortcut: pre-empt focused widget if any child claims this key
+        # Panel-scoped shortcut
         if not key.is_sequence:
             ch = key.lower()
             for w in self.widgets.values():

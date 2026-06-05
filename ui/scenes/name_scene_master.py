@@ -18,9 +18,6 @@ if TYPE_CHECKING:
 
 
 class NameSceneMaster(Scene):
-    """NameScene rebuilt as a single master Panel with header/footer that
-    contains the sub-panels as nested children. Used to exercise panel-in-panel
-    focus, Tab/arrow cycling, and shortcut scoping."""
 
     def __init__(self, screen: Screen):
         super().__init__(screen)
@@ -31,18 +28,27 @@ class NameSceneMaster(Scene):
             header=True,
             footer=True,
         ))
-        master.set_header('  New Game — create your brawler')
-        master.set_footer('  [Tab] move   [↑↓] cycle   [C] create   [Esc] cancel')
 
-        # ── main panel ────────────────────────────────────────────────────────
+        self.add_command('q', 'Save & Quit', lambda: (self.save(), Widget.CANCELLED)[-1])
+        h = self.get_command_hints()
+
+        master.set_header('  New Game — create your brawler')
+        master.set_footer(f'  [Tab] Cycle   [↑↓] Move   [Esc] Cancel  {h}')
+
         main = Panel(0, 0, 2, 2, title='Character', border=False)
         ti = TextInput(
             x=0, y=0, width=30,
             label='Enter your name:',
             placeholder='Your name…',
             max_length=20,
-            required=True,
+            # required=True,
             on_submit=lambda _: (ls.request_focus(), Widget.NO_EVENT)[-1],
+            rules=[
+                (r'^.{0,2}$', 'At least 3 characters'), # requirement: regex
+                (r'[0-9]', 'No numbers allowed'),
+                (r'[^A-Za-z0-9 -]', 'No special symbols'),
+                (r'^[^A-Z]', 'Must be capitalized'),
+            ],
         )
         hint = Label('[Enter] confirm   [Esc] cancel')
         ls = List(
@@ -67,11 +73,11 @@ class NameSceneMaster(Scene):
 
         main.add('name', ti)
         # ti.move_by(dy=-1)
-        main.add('hint', hint.place_below(ti, 0))
-        main.add('list', ls.place_right_of(ti, 3))
-        main.add('radio', rg.place_below(hint, 2))
+        # main.add('hint', hint.place_below(ti, 0))
+        main.add('list', ls.place_right_of(ti))
+        main.add('radio', rg.place_below(ti, 1))
         main.add('radio-desc', rg_desc.place_right_of(rg, 6))
-        main.focus_child('name')
+        # main.focus_child('name')
         main.fit_to_content()
 
         # ── side panel ────────────────────────────────────────────────────────
@@ -125,7 +131,9 @@ class NameSceneMaster(Scene):
         master.add('side', side)
         master.add('about', about)
         master.add('stats', stats)
-        master.focus_child('main')
+
+        # print(f"{master.alias or 'Unk'} dimensions: {main.w}x{main.h}")
+        # print(f"{master=}")
 
         master.fit_to_content()
         self.center(master)
@@ -135,8 +143,14 @@ class NameSceneMaster(Scene):
         master.separate(main, about)
         master.separate(side, stats)
 
+        self.tree()
+
     def handle_key(self, key) -> Optional[Scene]:
         result = self.route_key(key)
         if result is Widget.NO_EVENT: return self
         if result is Widget.CANCELLED: return TitleScene(self.screen)
         return GameScene(self.screen)
+    
+    def enter(self):
+        super().enter()
+        self.load(clear=True)
