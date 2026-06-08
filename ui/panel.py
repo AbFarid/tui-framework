@@ -61,8 +61,8 @@ class Panel(Widget):
         border_style: BorderStyle = BorderStyle.THIN,
         header: bool = False,
         footer: bool = False,
-        pad_x: Optional[int] = None,  # None → 2 if bordered, else 0
-        pad_y: Optional[int] = None,  # None → 1 if bordered, else 0
+        pad_x: Optional[int] = None,
+        pad_y: Optional[int] = None,
         # pad_t: int = 1,
         # pad_b: int = 1,
         # pad_l: int = 2,
@@ -94,7 +94,7 @@ class Panel(Widget):
         self._slots: dict[Panel.Alignment, str] = {a: '' for a in Panel.Alignment} # requirement: dict comprehension
         if title: self._slots[default_alignment] = title
 
-        # inner content area (inside border + header/footer rows)
+        # inner content area
         head = header * 2
         foot = footer * 2
         self.ix = x + border
@@ -106,7 +106,7 @@ class Panel(Widget):
         self._focused: Optional[str] = None
         self._separators: list[tuple] = []
 
-    # layout rectangle: inner content area minus padding. used by alignment helpers
+    # inner content area minus padding
     @property
     def lx(self) -> int: return self.ix + self.pad_x
     @property
@@ -304,7 +304,7 @@ class Panel(Widget):
             self._slots[a] = ''
         return self
 
-    # ── separators ───────────────────────────────────────────────────────────
+
     def separator(self, x: int, y: int, orientation: Orientation, penetrate: bool = False) -> Self:
         self._separators.append((orientation, x - self.x, y - self.y, penetrate))
         return self
@@ -322,7 +322,7 @@ class Panel(Widget):
             return self.separator(gap, seed, Panel.Orientation.VERTICAL, penetrate)
         raise InvalidWidgetSizeError(0, 0, 'cannot separate overlapping widgets')
 
-    # ── drawing ──────────────────────────────────────────────────────────────
+
     def draw(self, screen: Screen):
         if self.border: self._draw_border(screen)
         if self.has_header: self._draw_header(screen)
@@ -425,7 +425,7 @@ class Panel(Widget):
         for i, line in enumerate(self.lines[:self.ih]):
             screen.put(self.ix, self.iy + i, line[:self.iw].ljust(self.iw))
 
-    # ── helpers usable by custom render callbacks ────────────────────────────
+
     def put(self, screen: Screen, dx: int, dy: int, text: str):
         """Draw text at an offset INSIDE the panel (dx, dy from inner top-left)."""
         screen.put(self.ix + dx, self.iy + dy, text[:self.iw - dx])

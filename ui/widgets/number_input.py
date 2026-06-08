@@ -26,7 +26,7 @@ class NumberInput(Widget):
         on_submit: Optional[Callable[[int], Any]] = None,
     ):
         is_underline  = style == NumberInput.Style.UNDERLINE
-        control_w     = max_digits + 4          # "− NNNN +"
+        control_w     = max_digits + 4
         label_w       = len(label) if label else 0
         gap           = 1 if label_w else 0
         bbox_w        = width if width is not None else (label_w + gap + control_w)

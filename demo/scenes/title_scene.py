@@ -1,11 +1,11 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
-from ..scene import Scene
-from ..panel import Panel
-from ..widgets import Menu, Option, Widget
+from ui.scene import Scene
+from ui.panel import Panel
+from ui.widgets import Menu, Option, Widget
 
 if TYPE_CHECKING:
-    from ..screen import Screen
+    from ui.screen import Screen
 
 TITLE_ART = """\
   ▄▄▄▄▄▄
@@ -33,13 +33,12 @@ class TitleScene(Scene):
             render=self._render,
         ))
 
-        from .game_scene import GameScene
-        from .name_scene import NameScene
-        from .name_scene_master import NameSceneMaster
-        
+        from .creation_scene_multi import CreationScene_M
+        from .town_scene import TownScene
+
         options = [
-            Option('New Game', action=lambda: NameSceneMaster(screen)), # requirement: lambda
-            Option('Continue', action=lambda: NameScene(screen)), #disabled=True
+            Option('New Game', action=lambda: CreationScene_M(screen)), # requirement: lambda
+            Option('Continue', action=lambda: TownScene(screen)),       # default character
             Option('Quit',     action=lambda: None),
         ]
         menu = Menu(

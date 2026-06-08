@@ -4,7 +4,6 @@ class GameError(Exception):
     """Base for all custom errors in this project. Catch this to handle any project error."""
 
 
-# ── UI ──────────────────────────────────────────────────────────────────────
 class WidgetNotFoundError(GameError):
     """Raised when referencing a widget by name that isn't registered on a panel."""
     def __init__(self, name: str, available: list[str]):

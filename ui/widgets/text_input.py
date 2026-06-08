@@ -27,8 +27,8 @@ class TextInput(Widget):
         style: Style = Style.UNDERLINE,
         gap: int = 1,
         on_submit: Optional[Callable[[str], Any]] = None,
-        rules: Optional[list[tuple[str, str]]] = None,               # [(regex, error msg), ...]  # requirement: regex
-        validator: Optional[Callable[[str], Optional[str]]] = None,  # returns error msg or None
+        rules: Optional[list[tuple[str, str]]] = None,
+        validator: Optional[Callable[[str], Optional[str]]] = None,
     ):
         has_label    = label is not None
         is_border    = style == TextInput.Style.BORDER
@@ -39,7 +39,7 @@ class TextInput(Widget):
         label_w       = len(label) if label else 0
         bbox_w        = max(field_total_w, label_w)
         bbox_h        = 1 + ((1 + gap) if has_label else 0) + (2 if is_border else 1 if is_underline else 0)
-        bbox_h       += 1 if validates else 0   # reserve a row under the field for the error
+        bbox_h       += 1 if validates else 0
 
         super().__init__(x, y, w=bbox_w, h=bbox_h)
 
@@ -56,12 +56,12 @@ class TextInput(Widget):
         self.rules          = [(re.compile(p), msg) for p, msg in rules] if rules else []
         self.validator      = validator
         self.is_dirty       = False
-        self._error: Optional[str] = None   # current validation error, shown until value changes
+        self._error: Optional[str] = None
 
         self._field_dx = 2 if is_border else 0
         self._field_dy = ((1 + gap) if has_label else 0) + (1 if is_border else 0)
         self._validates = validates
-        self._error_dy  = bbox_h - 1   # the reserved row
+        self._error_dy  = bbox_h - 1
 
     def serialize(self): return self.value
     def deserialize(self, data): self.value = str(data)
@@ -108,7 +108,7 @@ class TextInput(Widget):
             screen.put(fx, fy + 1, term.red(line) if self._error else line)
 
         if self._validates:
-            screen.put(self.x, self.y + self._error_dy, ' ' * self.w)  # clear the error row
+            screen.put(self.x, self.y + self._error_dy, ' ' * self.w)
             if self._error:
                 screen.put(self.x, self.y + self._error_dy, term.red(self._error[:self.w]))
 
@@ -117,7 +117,7 @@ class TextInput(Widget):
     def handle_key(self, key):
         if key.is_sequence:
             if key.name == 'KEY_ENTER':
-                if not self.value and self.required: return TextInput.NO_EVENT  # silent on empty
+                if not self.value and self.required: return TextInput.NO_EVENT
                 err = self._check()
                 if err:
                     self._error = err
@@ -132,13 +132,13 @@ class TextInput(Widget):
                 if not self.is_dirty and self.value: self.value = ''
                 else: self.value = self.value[:-1]
                 self.is_dirty = True
-                self._error = None   # any change clears the error
+                self._error = None
                 return TextInput.NO_EVENT
             return TextInput.BUBBLE
         if key.isprintable():
             if self.max_length is None or len(self.value) < self.max_length:
                 self.value += str(key)
                 self.is_dirty = True
-                self._error = None   # any change clears the error
+                self._error = None
             return TextInput.NO_EVENT
         return TextInput.BUBBLE

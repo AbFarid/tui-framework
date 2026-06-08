@@ -103,7 +103,7 @@ class Scene:
             p.move_to(p.x + dx, p.y + dy)
         return self
 
-    # ── scene-wide commands (key → labelled action) ────────────────────────
+
     def add_command(self, key: str, label: str, action: Callable[[], Any]) -> 'Scene':
         self.commands.append((key, label, action))
         return self
@@ -139,7 +139,7 @@ class Scene:
         return result
 
     def _cycle_panel(self, reverse: bool = False, wrap: bool = False) -> bool:
-        names = list(self.panels)
+        names = [n for n, p in self.panels.items() if p.focusable]
         if not names: return False
         delta = -1 if reverse else +1
         snap: Literal['first', 'last'] = 'last' if reverse else 'first'

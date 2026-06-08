@@ -14,10 +14,10 @@ class Screen:
         self._cbreak = None
         self.width = CANVAS_W
         self.height = CANVAS_H
-        self._ox = 0  # x offset to center canvas in terminal
+        self._ox = 0
         self._oy = 0
         self._out = sys.stdout
-        self._cursor_at: Optional[tuple[int, int]] = None  # set per-frame by widgets that want the cursor
+        self._cursor_at: Optional[tuple[int, int]] = None
 
     def __enter__(self):
         self._out = debug.install()  # hijack sys.stdout for print()

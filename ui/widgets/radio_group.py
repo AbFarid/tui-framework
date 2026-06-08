@@ -136,6 +136,7 @@ class RadioGroup(Widget):
             else:
                 if key.name == 'KEY_LEFT':  self._move(-1); return Widget.NO_EVENT
                 if key.name == 'KEY_RIGHT': self._move(+1); return Widget.NO_EVENT
+            if key.name == 'KEY_ESCAPE': return Widget.CANCELLED
             return Widget.BUBBLE
 
         for i, item in enumerate(self.items):

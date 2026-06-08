@@ -1,37 +1,60 @@
-# Combat Game
+# Punch Quest — TUI Framework
 
-A turn-based combat game( with timed decisions?).
+This is a semester project for the **PPY** course (_Podstawy programowania w języku Python_ – _Fundamentals of Python Programming_).
+
+A terminal UI framework built in Python using `blessed`, demonstrated through an interactive demo. Renders to a fixed 120×40 canvas, centred in the terminal.
 
 ## Requirements
 
-- Python 3.10+
-- [blessed](https://pypi.org/project/blessed/) — terminal UI library
+- Python 3.11+
+- [blessed](https://pypi.org/project/blessed/) — terminal rendering
 
-## Setup
+## Installation & Usage
 
-```bash
-pip install -r requirements.txt
-```
+0. Optionally, to use a virtual environment:
 
-Or manually:
+   ```bash
+   python3 -m venv .venv && source .venv/bin/activate
+   ```
 
-```bash
-pip install blessed
-```
+1. Install the requirements:
 
-## Running
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-```bash
-python main.py
-```
+2. Run the demo:
+
+   ```bash
+   python main.py
+   ```
 
 ## Controls
 
 | Key | Action |
 |-----|--------|
-| `1` `2` `3` `4` | Attack Head / Torso / Hips / Legs |
-| `Q` `W` `E` `R` | Block Head / Torso / Hips / Legs |
-| `Z` `X` `C` | Stance: Defensive / Offensive / Agile |
-| `ESC` / `Ctrl+C` | Quit |
+| `Tab` / `Shift+Tab` | Cycle focus |
+| `↑` `↓` | Move selection |
+| `←` `→` | Adjust value / release focus |
+| `Enter` | Confirm |
+| `Esc` | Cancel / back |
+| `F5` | Restart |
 
-Each turn you have a limited time to choose your attack target, block location, and stance before the round resolves automatically.
+## Project Structure
+
+```
+ui/         # framework — widgets, panels, scenes, screen
+demo/       # game built on top of the framework
+  scenes/   # title, character creation, town
+  state.py  # shared game state (Character dataclass)
+main.py     # entry point
+```
+
+## Framework Features
+
+- **Widget tree** — Panel (nestable), TextInput, NumberInput, Button, List, Menu, RadioGroup, TextBlock, ProgressBar, Label
+- **Focus system** — Tab cycling, directional focus, snap-on-entry, bubble-up event protocol
+- **Panels** — border styles, header/footer rows, title slots, padding, auto-junction separators, `fit_to_content`
+- **State persistence** — `Scene.save` / `Scene.load` (JSON under `state/`)
+- **Validation** — TextInput regex blocklist rules
+- **Debug logging** — stdout hijack (`debug.py`), `@traced` decorator, `Panel.walk` / `tree`

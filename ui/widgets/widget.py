@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional, Self
 if TYPE_CHECKING:
     from ..screen import Screen
 
-GAP = 3  # default spacing between widgets placed relative to one another
+GAP = 3
 
 
 class Widget(ABC):

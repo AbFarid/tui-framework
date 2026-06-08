@@ -1,7 +1,8 @@
 import os
 import sys
 import time
-from ui import Screen, TitleScene
+from ui import Screen
+from demo.scenes import TitleScene
 
 TICK = 1 / 30  # ~33ms per frame
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Self, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Self, Union
 from .widget import Widget
 from ._scrollbar import draw_scrollbar
 from errors import InvalidWidgetSizeError
@@ -14,9 +14,9 @@ class ListItem:
     label: str
     value: Any = None
     id: Optional[str] = None
-    color: Optional[str] = None # blessed attr for non-selected rendering
+    color: Optional[str] = None
     disabled: bool = False
-    key: Optional[str] = None   # optional shortcut letter (used by RadioGroup)
+    key: Optional[str] = None   # optional shortcut letter
 
     def __post_init__(self):
         if self.value is None: self.value = self.label
@@ -24,6 +24,10 @@ class ListItem:
 
 
 class List(Widget):
+    @property
+    def focusable(self) -> bool:
+        return self.selectable
+
     def __init__(
         self,
         x: int, y: int,
@@ -35,6 +39,7 @@ class List(Widget):
         highlight: Optional[str] = 'reverse',
         highlight_unfocused: Optional[str] = 'on_bright_black',
         show_scrollbar: bool = True,
+        on_select: Optional[Callable[[ListItem], Any]] = None,
     ):
         if show_scrollbar:
             if h < 4: raise InvalidWidgetSizeError(w, h, 'scrollbar needs h ≥ 4 (2 tips + 2 thumb positions)')
@@ -50,6 +55,7 @@ class List(Widget):
         self.highlight = highlight
         self.highlight_unfocused = highlight_unfocused
         self.show_scrollbar = show_scrollbar
+        self.on_select = on_select
         self.selected = 0
         self.scroll   = 0
 
@@ -59,7 +65,7 @@ class List(Widget):
     def _wrap_item(it: Union[str, ListItem]) -> ListItem:
         return it if isinstance(it, ListItem) else ListItem(label=it)
 
-    # ── mutation ────────────────────────────────────────────────────────────
+
     def set_items(self, items: list[Union[str, ListItem]]) -> Self:
         self.items = [self._wrap_item(it) for it in items]
         self.selected = 0
@@ -156,7 +162,11 @@ class List(Widget):
             if key.name == 'KEY_UP':   return self._move_or_release(-1)
             if key.name == 'KEY_DOWN': return self._move_or_release(+1)
             if key.name == 'KEY_ENTER' and self.items and not self.items[self.selected].disabled:
-                return self.items[self.selected]
+                item = self.items[self.selected]
+                if self.on_select:
+                    r = self.on_select(item)
+                    return r if r is not None else Widget.NO_EVENT
+                return item
             if key.name == 'KEY_ESCAPE' and not self.required: return Widget.CANCELLED
 
         return Widget.BUBBLE

@@ -138,11 +138,11 @@ class Menu(Widget):
 
             return Menu.BUBBLE
 
-        for opt in self.options: # explicit-key shortcut
+        for opt in self.options:
             if opt.key and not opt.disabled and key.lower() == opt.key:
                 return opt.action()
 
-        if self.number_style is not None and key.isdigit(): # number shortcut
+        if self.number_style is not None and key.isdigit():
             n = int(key) - 1
             if 0 <= n < len(self.options) and not self.options[n].disabled and not self.options[n].key:
                 return self.options[n].action()
